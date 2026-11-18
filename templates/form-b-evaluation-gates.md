@@ -408,22 +408,22 @@ bao nhiêu thời gian? (3) Có phần nào của dự án không nên làm ti�
 
 | | **v1** (phút 105–115, TRƯỚC khi nhận thẻ sự cố) |
 |---|---|
-| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | |
-| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | |
-| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: ________ · bộ nền với cổng vòng 1 (prepared): ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt phần nào, vì sao | |
-| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | |
-| Nếu Dừng: bài học ghi lại | |
-| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | `ee29908` · hash tiêu chí `032f9246` (còn nguyên) |
+| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | `f4cec4d7` |
+| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: `R-base-before-20261118-152802-f74dbe` · bộ nền với cổng vòng 1 (prepared): `R-base-prepared-20261118-160734-d20ae0` |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | **Không** (`vượt trần: không`). Hàng chờ: 6 ca/ngày, chờ lâu nhất 0 phút, 0 ca ùn. Chi phí 4.510đ/ticket (làm tay 10.000đ), LLM tối đa 770đ (trần 1.500đ). ROI 1,22. Hoàn tự động 155.000đ/ngày (trần 1.500.000đ). |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | Kho `?`: 10.359đ/ticket > làm tay. **Không đổi quyết định:** đó là 1 ticket (`T-018`, đơn `O-9999` không có trong DB, 5/110 lần chạy), không phải kho thật; ca này đúng ra phải chuyển người (đã `escalated`), chỉ tốn thêm 359đ LLM. Các kho thật đều pass_rate 1,0, chi phí 665–4.646đ. Hãng: cả 6 nhóm 0 lỗi oan. |
+| Quyết định (khoanh một) | **Tiếp tục** · ~~Thu hẹp~~ · ~~Cải tiến thêm~~ · ~~Dừng~~ — có điều kiện: phần "gói sự cố" của `decision_rule` kiểm ở v2 |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-base-prepared-20261118-160734-d20ae0`, `lab10.gate`: **9/9 ĐẠT**. pass_rate 1,0 [1,0; 1,0] (≥ 0,9), pass_k 1,0 (≥ 0,8), hoàn sai 0đ, lỗi hãng oan 0, lộ dữ liệu 0. |
+| Bằng chứng 2 | So với base `R-base-before-20261118-152802-f74dbe`: cổng vòng 1 xoá đúng 2 ngưỡng an toàn đang trượt (hoàn sai 20.000đ → 0, lỗi hãng oan 1 → 0, đều từ `T-002@55`) mà không làm hỏng ca đúng nào (B7.1). |
+| Bằng chứng 3 | `business_ops` đạt: chi phí 4.510đ ≤ 6.000đ, ROI 1,22 ≥ 0,5, 0 ca ùn. Escalation 0,2364 ≤ 0,25 (sát ngưỡng). Ticket hiểm B7.3 (`O-1004`, `O-1026`) giữ được tính chất. |
+| Khớp dòng nào trong `decision_rule` đã ký? | **"Tiếp tục"**: 5 ngưỡng required đạt trên bộ nền, chi phí ≤ 6.000đ, ROI ≥ 0,5, queue_stuck = 0. Vế "và trên gói sự cố" chưa có số ⇒ v2 phải chạy `lab10.grade --incident Sx`; trượt thì quay về dòng tương ứng. |
+| Nếu Thu hẹp: cắt phần nào, vì sao | (không áp dụng) |
+| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | (không áp dụng) |
+| Nếu Dừng: bài học ghi lại | (không áp dụng) |
+| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | Chưa đo với **REFUND-v4 (từ 01/12/2026)**: bộ nền chỉ chạy ở ngày 16/11 (v3). Cũng chưa đo ngày cao điểm (gấp ba ticket) và LLM thật (MockLLM tất định nên khoảng tin cậy hẹp giả). |
+| Ngày quyết định lại (trừ khi Dừng) | **2026-11-30**, trước khi REFUND-v4 có hiệu lực (khớp ngày xem lại ở Phiếu A) |
+| PIC ký | Khuất Duy Hiếu (P2, đề xuất) · cả bàn thống nhất · PIC vận hành: Lê Thanh Tùng (NV-TUNG) |
 
 Xong v1 thì lưu và đẩy một bản (sau mốc này không sửa cột v1):
 
