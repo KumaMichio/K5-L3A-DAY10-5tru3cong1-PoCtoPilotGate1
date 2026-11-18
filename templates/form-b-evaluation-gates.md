@@ -312,10 +312,10 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 
 | Khoá | Giá trị bàn đặt | Lý do (một câu, có số) |
 |---|---|---|
-| `business.daily_refund_cap_vnd` | | |
-| `business.cost_budget_per_ticket_vnd` | | |
-| `business.pilot_scope` (all / warehouse / percent) | | |
-| `business.roi_min` | | |
+| `business.daily_refund_cap_vnd` | **1.500.000đ** | Ngân sách hoàn tự động của Finance là 2.000.000đ/ngày (`ops_limits.daily_auto_refund_budget_vnd`); bàn đặt trần 75% để chừa 500.000đ biên cho các khoản đã ghi trước khi cổng kịp chặn, và để cổng chặn trước khi chạm điều kiện dừng 2.000.000đ của P3 (khoản vượt trần chuyển chị Hạnh duyệt, không mất ca của khách). |
+| `business.cost_budget_per_ticket_vnd` | **1.500đ** | Bằng đúng trần tiền LLM Ops và Finance đã thống nhất (`ops_limits.max_llm_cost_per_ticket_vnd` = 1.500đ); ticket thường chỉ tốn khoảng 770đ (200 nền tảng + 150 đọc + ~22 theo độ dài chữ, ticket dài nhất 86 ký tự + 200 soát chính sách + 100 xác nhận + 100 ghi chú theo `ops_facts.llm_cost`), nên chỉ ticket bất thường (rất dài, bị nhồi chữ) mới chạm trần và được chuyển cho người. |
+| `business.pilot_scope` (all / warehouse / percent) | **all** (`warehouses: []`, `percent: 100`) | Vòng 1 chạy cả 5 kho để có số liệu từng kho và hãng; bộ nền chỉ có ~22 ticket/ngày, thu hẹp ngay sẽ làm phí trực 30.000đ/người/ca (`ops_facts.reviewer_standby_fee_vnd`) chia cho quá ít ticket và đẩy chi phí mỗi ticket lên. Nếu khối "theo kho và hãng" cho thấy kho nào tốn hơn làm tay 10.000đ/ticket thì chuyển sang `warehouse`, bỏ kho đó (đúng dòng Thu hẹp trong `decision_rule`). |
+| `business.roi_min` | **0,5** | Khớp với `business_ops.roi_min` đã ký: làm tay 10.000đ/ticket (`ops_facts.manual_cost_per_ticket_vnd`), trần chi phí đã ký 6.000đ/ticket ⇒ ROI ≈ (10.000 − 6.000) ÷ 6.000 ≈ 0,67; sàn 0,5 chừa chỗ cho tiền hoàn oan (bị trừ thẳng vào tiết kiệm). |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
 
