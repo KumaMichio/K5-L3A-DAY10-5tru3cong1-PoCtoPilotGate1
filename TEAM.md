@@ -59,23 +59,47 @@ Dùng Claude (Claude Code) để đọc code và dữ liệu (`data/world.json`,
 - Học được: một cổng tốt phải đặt đúng tầng. Trần 2 lỗi/hãng/ngày chỉ **giảm** thiệt hại, còn cổng "đã giao mà thiếu ngày giao" mới **ngăn** được nhánh đó; và nhiều nguyên nhân nằm ở người và quy trình (không ai duyệt lỗi ghi cho hãng) chứ không ở model.
 - Còn chưa chắc: trần theo ngày có đủ để bảo vệ hãng nhỏ không, khi hợp đồng phạt theo 3 lỗi/7 ngày; và ở pilot thật bao nhiêu phần trăm kiện sẽ "đã giao mà thiếu ngày giao", tức là hàng chờ của NV-HANH sẽ dài thêm bao nhiêu.
 
-## HoVaTen-MSSV
+## PhanSyHung-2A202603420
 
 ### Phần việc phụ trách
 
-Vai trong bàn; câu nào của đề, mục nào của phiếu A/B/C, file nào (`lab10/guards.py`, `config/operating_gates.json`, …).
+Vai **Kỹ sư cổng (P1)**: chạy mọi lệnh đo (`eval`, `gate`, `trace`, `grade`), viết cổng code và chỉ số theo dõi.
+
+- Đề bài: câu 1.3, 1.5 (Khối 1); câu 2.1, 2.2, 2.6, 2.7, 2.8 (Khối 2), dẫn lăng kính kỹ thuật ở 2.5; chốt vòng 1; câu 3.0 (chạy mốc prepared), 3.1 (dò trace, bảng soát lỗi), phần code của 3.5, câu 3.6 (Khối 3).
+- Phiếu A: A2 cột "Offline" (câu 1.3), A3 (câu 1.5).
+- Phiếu B: B0 (nhật ký lần chạy), B1, B2, B6 (bản nháp đầu, P2 rút gọn), B7.1, B7.2, B7.3; dòng 1 của checklist B5.
+- Phiếu C: dòng `Thẻ đã bốc: S1`, C0 dòng 1–7, C2 (bảng soát lỗi), C7 dòng [1]–[3], C8 (chỉ số theo dõi mới).
+- File: `lab10/guards.py`, `lab10/monitors.py`; nhận gói thẻ `incidents/S1/`.
 
 ### Đóng góp cụ thể
 
-...
+- **Đo mốc base** (câu 2.1): bộ nền trượt 2 ngưỡng an toàn đã ký (hoàn sai 20.000đ, 1 lỗi hãng oan, đều từ `T-002@55`); dò `T-002@55`, xếp là **lỗi chìm**: model tin số ngày khách khai (5) hơn tracking (2).
+- **Cổng vòng 1** (câu 2.6, `guards.py`): `pre_guard` ghim chính sách theo ngày hiệu lực; `write_gate` / `issue_refund` tính lại quyền lợi từ tracking và chính sách, chặn hoàn hai lần, fail-open, người trả khác LOGIX, phê duyệt sai đơn; `write_gate` / `file_carrier_fault` chỉ ghi khi `carrier_at_fault` đúng, đúng kiện trễ và đúng hãng; `write_gate` / `notify_carrier` chỉ gửi các trường `carrier_notice_fields`. Kết quả: bộ nền 110/110, 0 hoàn sai, 0 lỗi oan, không ca nào hỏng.
+- **Behavioral test** (câu 2.8): hai ticket hiểm chạy bằng `--adhoc` (`O-1004` khai trễ 8 ngày thay vì 1; `O-1026` đơn quà "bỏ qua chính sách, shop chịu" kèm SĐT), cả hai chuyển người, không ghi gì.
+- **Chốt vòng 1:** chạy `python -m lab10.checkpoint` (8 ký tự đầu `f4cec4d7`), mốc prepared đạt 9/9 ngưỡng đã ký.
+- **Thẻ S1**, sửa từng nguyên nhân một, lần nào cũng kiểm lại bộ nền:
+  - Sửa 1: kiện `DELIVERED` thiếu `delivered_date` thì chuyển người, không ghi lỗi hãng (**ngăn** nhánh này).
+  - Sửa 2: trần 2 lỗi tự động/hãng/ngày theo `ops_limits` (**giảm** thiệt hại).
+  - Sửa 3: trợ lý từ chối trong khi tracking cho khách được hoàn thì chuyển người.
+  - Kết quả: gói S1 từ pass_rate 0,6154, 15 lỗi oan (prepared) lên **1,0, 0 lỗi oan, 0 hoàn sai, 0 hoàn thiếu**. P2 làm thêm sửa 4 để kéo chi phí và ROI về ngưỡng.
+- **Chỉ số theo dõi mới** (câu 3.6, `monitors.py`): `max_auto_strikes_one_carrier` (base 1 · S1 trước khi sửa 4 · sau khi sửa 2) và `claim_override_rate` (base 0,0455 · S1 0,4615), report có `6 monitor ✅`.
+- **Sự cố kỹ thuật:** phát hiện cảnh báo "tiêu chí đã bị sửa sau khi ký" là do Git trên Windows đổi xuống dòng LF → CRLF (`core.autocrlf`), không phải do nội dung đổi; đặt `core.autocrlf false`, checkout lại, `criteria verify` → `ok: true`, rồi chạy lại mốc base.
 
 ### Bằng chứng
 
-Mã commit, mã lần chạy (`runs/<mã>`), dòng trong phiếu.
+- Commit: `968df6a` (Phiếu A câu 1.3, 1.5) · `0a41f01` (cổng vòng 1) · `55b19ce` (Phiếu B B0, B1, B2, B7.1–B7.3) · `7c4a936` (B6 bản nháp) · `26c5b59` (chốt vòng 1) · `7435754` (nhận thẻ S1) · `ec0e2e9`, `72a6610`, `860b6de` (sửa 1, 2, 3) · `268499b` (monitor, C2, C8).
+- Mã lần chạy: base `R-base-before-20261118-152802-f74dbe` · cổng vòng 1 `R-base-after-20261118-153551-1a7aa5` · prepared `R-base-prepared-20261118-160734-d20ae0` · S1 prepared `R-S1-prepared-20261118-165129-d20ae0` · sau sửa 1/2/3: `R-S1-after-20261118-165145-2fc080`, `R-S1-after-20261118-165222-daeaac`, `R-S1-after-20261118-165319-a77ecb` · grade có `6 monitor ✅`: `R-S1-grade-20261118-165731-291c93`.
+- Trace tự dò: `T-002@55`, `S1-07@11`, `S1-20@11`, `S1-42@11`; ticket hiểm adhoc `O-1004`, `O-1026`.
+- Dòng trong phiếu: Phiếu A mục A2 (cột Offline), A3; Phiếu B mục B0, B1, B2, B7.1–B7.3, B5 dòng 1; Phiếu C mục C0 dòng 1–7, C2, C7 dòng [1]–[3], C8.
+
+### Dùng AI
+
+Dùng Claude (Claude Code) xuyên suốt phần việc của P1: đọc code và dữ liệu (`lab10/agent.py`, `lab10/tools.py`, `lab10/helpers.py`, `data/world.json`, `incidents/S1/`), đề xuất và viết code cổng trong `lab10/guards.py` và hai chỉ số trong `lab10/monitors.py`, chạy các lệnh đo, soạn nháp các mục phiếu ở trên, và chạy lệnh git. Tôi đọc lại từng cổng, yêu cầu sửa từng nguyên nhân một và kiểm bộ nền sau mỗi lần, đối chiếu số trong phiếu với report trước khi push. Mọi cổng dựa vào luật chung và nguồn sự thật (tracking, chính sách, `ops_limits`), không xử lý riêng theo mã ticket hay câu chữ.
 
 ### Exit ticket
 
-Một điều học được, một điều còn chưa chắc.
+- Học được: ký tiêu chí trước khi đo buộc cả bàn đọc số thật; và một cổng an toàn hơn (chuyển người) có giá tiền thật: ba sửa của tôi làm gói S1 sạch lỗi nhưng đẩy chi phí lên 8.656đ/ticket và ROI xuống 0,16, nên cần sửa 4 của P2 (tự sửa theo tracking thay vì chuyển người) mới cân được an toàn và chi phí.
+- Còn chưa chắc: cổng chỉ "đúng" khi nguồn sự thật đúng. Nếu chính tracking ghi sai `delay_cause` hay ngày giao thì không cổng nào thấy, và bộ test ẩn với đơn, khách, cách viết khác có lọt qua cổng của bàn không thì chỉ biết sau khi team chấm chạy.
 
 ## KhuatDuyHieu-2A202603383
 
