@@ -76,3 +76,32 @@ Mã commit, mã lần chạy (`runs/<mã>`), dòng trong phiếu.
 ### Exit ticket
 
 Một điều học được, một điều còn chưa chắc.
+
+## KhuatDuyHieu-2A202603383
+
+### Phần việc phụ trách
+
+Vai **Sản phẩm và kinh doanh (P2)**. Câu 1.1, 1.6 (Phiếu A mục A1, A4, A5); 2.3 (Phiếu B mục B3); 2.5 (B6, cùng cả bàn); 2.9 (B7.4); quyết định v1 (B8); 3.2 (Phiếu C mục C5); 3.5 phần kinh doanh (C7 dòng [4]); C1, C6 (cùng cả bàn); quyết định v2 và ba dòng bắt buộc (C12); `submission/submission.json`. File: `config/acceptance_criteria.json` (viết và ký), `config/operating_gates.json` → `business`, `lab10/guards.py` (bản sửa 4 trong `_gate_refund`).
+
+### Đóng góp cụ thể
+
+- **Bản tiêu chí, ký trước khi đo:** 5 ngưỡng bắt buộc (pass_rate ≥ 0,9, pass_k ≥ 0,8, ba chỉ số an toàn = 0), `escalation_rate_max` 0,25, `business_ops` (6.000đ/ticket, ROI ≥ 0,5, 0 ca ùn) lập luận từ `ops_facts` / `ops_limits`; `stop_condition` và 4 dòng `decision_rule`; hai câu ranh giới đầu ra.
+- **Bản đồ dữ liệu và drift (B3):** tách nguồn sự thật / bản sao; ví dụ drift REFUND-v4 từ 01/12/2026 (quan hệ vào–ra đổi).
+- **Cổng kinh doanh (B7.4):** trần hoàn tự động 1.500.000đ/ngày (75% ngân sách Finance), ngân sách LLM 1.500đ/ticket, ROI tối thiểu 0,5, phạm vi `all`.
+- **Quyết định v1 (B8):** Tiếp tục có điều kiện, 9/9 ngưỡng đạt trên bộ nền; phần "gói sự cố" để kiểm ở v2.
+- **Thẻ S1:** specification cho `file_carrier_fault` (C5); dò trace tìm ba nguyên nhân (thiếu `delivered_date`, cụm lỗi GHSH trong một ngày, khách khai thấp hơn tracking) để P1 sửa; **bản sửa 4**: cổng hoàn tự sửa theo tracking (`modify` về quyền lợi / `deny` khi 0đ) thay vì chuyển người, đưa S1 từ 8.656đ/ticket, ROI 0,16 về 5.925đ, ROI 0,69 mà không đổi mức an toàn; thử và **bác** phương án bỏ kho CT (bộ nền ROI 1,24 → 0,89).
+- **Quyết định v2 (C12):** Tiếp tục có điều kiện, kèm ba điều kiện chuyển sang Thu hẹp; ba dòng bắt buộc; gom bài nộp tới `ĐỦ THÀNH PHẦN`.
+
+### Bằng chứng
+
+- Commit: `ee29908` (ký tiêu chí) · `61b7ab1` (A5) · `9b7da13` (B3) · `4fc3d7e` (cổng `business`, B7.4) · `0ff93e7` (B6) · `d879505` (chốt vòng 1, quyết định v1) · `cad1136` (C5 câu 3.2) · `b8addd8` (bản sửa 4, C0 dòng 8–9, C7 dòng [4]) · `af33e81` (C1, C6, C12, bài nộp).
+- Lần chạy: `R-S1-after-20261118-170244-3be8b1` (sau bản sửa 4: 9/9 ngưỡng đạt trên S1) · `R-base-after-20261118-170244-3be8b1` (không regression) · tự kiểm tra `R-S1-grade-20261118-171219-04b4f6`.
+- Phiếu: A mục A1 (1.1), A4, A5; B mục B3, B6, B7.4, B8; C mục C0 dòng 8–9, C1, C5 (3.2), C6, C7 dòng [4], C12.
+
+### Exit ticket
+
+- **Học được:** từ góc nhìn developer, tôi quen hỏi "code đúng chưa"; lab này cho thấy phía quản trị dự án hỏi thêm ba câu khác.
+  - **Rủi ro:** viết ra trước khi xảy ra (pre-mortem, HAZOP, risk register có PIC), và với mỗi cổng phải nói rõ nó *ngăn* hay chỉ *giảm* tác hại.
+  - **Tiền (ROI, FinOps):** sửa đúng về an toàn vẫn có thể làm dự án lỗ. Ở thẻ S1, mỗi ca chuyển người tốn 10.000đ, bằng giá làm tay, làm ROI tụt còn 0,16. Chi phí mỗi ticket phải tách ra (LLM / người duyệt / phí trực) mới thấy đòn bẩy nằm ở đâu.
+  - **Quyết định:** ngưỡng và hành động phải ký *trước* khi xem số. Gate không phải đúng/sai mà là Tiếp tục / Thu hẹp / Cải tiến / Dừng, miễn khớp bằng chứng, và luôn có người đứng tên.
+- **Còn chưa chắc:** cách đặt ngưỡng kinh doanh khi lượng ticket nhỏ: phí trực cố định chi phối chi phí, nên biên của S1 chỉ còn 75đ. Tôi chưa biết con số nào trên dữ liệu giả lập còn đứng vững trong pilot thật.
