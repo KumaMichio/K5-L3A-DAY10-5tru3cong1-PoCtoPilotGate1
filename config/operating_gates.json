@@ -13,6 +13,8 @@
     "review_capacity_per_hour": 6,
     "max_queue_wait_minutes": 45,
     "stop_conditions": [
+      "Khi một hãng có lỗi tự động thứ 2 trong ngày (max_auto_strikes_per_carrier_per_day = 2) thì NV-HANH duyệt mọi lỗi tiếp theo của hãng đó trước khi ghi, báo #logix-refund-pilot-alerts; NV-OANH rà lại các lỗi đã ghi cho hãng đó trong 7 ngày",
+      "Khi có kiện DELIVERED mà thiếu delivered_date thì không tự hoàn tiền và không ghi lỗi hãng cho kiện đó; ticket chuyển NV-HANH, NV-TUNG báo điều phối hãng bổ sung ngày giao",
       "Khi có 1 lỗi ghi oan cho hãng (wrongful_carrier_faults > 0) thì NV-TUNG tắt file_carrier_fault và notify_carrier trong config/switches.json",
       "Khi có 1 lần lộ dữ liệu cá nhân cho hãng (pii_leaks > 0) thì NV-TUNG tắt notify_carrier ngay",
       "Khi tổng hoàn tự động trong ngày chạm trần 1.500.000đ (daily_refund_cap_vnd) hoặc có 1 khoản hoàn sai thì NV-TUNG tắt issue_refund, mọi ca chuyển NV-HANH duyệt tay",
