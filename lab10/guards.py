@@ -82,7 +82,12 @@ def _gate_refund(ctx, action):
     amount = int(action.get("amount_vnd") or 0)
     if amount > entitled:
         ctx.log("refund_over_entitlement", amount_vnd=amount, entitled_vnd=entitled, db_delay_days=delay)
-        return Verdict.escalate(f"cổng hoàn: đề xuất {amount}đ vượt quyền lợi {entitled}đ theo tracking và chính sách")
+        # VÒNG 2 · S1 (P2, lý do chi phí): tracking đủ dữ liệu là nguồn sự thật, nên tự sửa theo DB thay vì chuyển người.
+        # Mỗi ca chuyển người tốn 10.000đ (ops_facts.review_cost_per_ticket_vnd) = đúng giá làm tay.
+        if entitled > 0:
+            return Verdict.modify(f"cổng hoàn: hạ {amount}đ về quyền lợi {entitled}đ theo tracking và chính sách",
+                                  amount_vnd=entitled)
+        return Verdict.deny(f"cổng hoàn: đề xuất {amount}đ nhưng quyền lợi theo tracking và chính sách là 0đ")
 
     # (e) phê duyệt dùng kèm phải đúng đơn, còn hiệu lực và đủ hạn mức
     appr_id = action.get("approval_id")
