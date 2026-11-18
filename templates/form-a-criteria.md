@@ -48,12 +48,12 @@ trợ lý có đang gây thiệt hại cho bên ngoài LogiX không; không có 
 
 | | Offline, cho MỘT bước (câu 1.3) | Telemetry production (câu 1.4) |
 |---|---|---|
-| **Bước / hành vi được đo** | | |
-| **Thước đo** (một câu, có đơn vị) | | |
-| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | | |
-| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | | |
+| **Bước / hành vi được đo** | Bước **ghi lỗi hãng**: agent gọi `file_carrier_fault` (ghi một strike cho hãng vận chuyển / tài xế) | |
+| **Thước đo** (một câu, có đơn vị) | Tỉ lệ lỗi hãng ghi oan (%): số lệnh `file_carrier_fault` được ghi mà theo chính sách hiệu lực hãng **không** có lỗi, hoặc ghi sai hãng / sai kiện, trên tổng số lệnh `file_carrier_fault` được ghi | |
+| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | Phía agent: sự kiện `{"type": "tool", "tool": "file_carrier_fault"}` (các trường `order_id`, `parcel_id`, `carrier_id`, `delay_days`) trong `runs/<mã lần chạy>/traces/`, bộ nền 22 ticket × 5 seed = 110 lần chạy. Phía sự thật: `data/world.json` → `orders[].parcels[]` (`carrier_id`, `delay_cause`, ngày giao) và `policies` (bản hiệu lực ở ngày `as_of`: `fault_causes`, `late.min_days_fee`). **Không cần người gán nhãn**: nhãn đúng/sai tính tất định bằng `helpers.effective_policy` + `helpers.db_delay_days` + `helpers.carrier_at_fault` trên đúng kiện đó. Nhãn do Kỹ sư cổng viết script, Vận hành và pháp lý soát ngẫu nhiên 10 ca bằng mắt | |
+| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | Với mỗi lệnh ghi: **oan** nếu `carrier_at_fault(policy, parcel, db_delay_days(parcel, as_of))` là False, **hoặc** `carrier_id` trong lệnh khác `carrier_id` của kiện trong DB, **hoặc** `parcel_id` không thuộc `order_id`. Tỉ lệ = số lệnh oan ÷ số lệnh `file_carrier_fault` đã ghi (chỉ đếm lệnh thực sự ghi, không đếm lệnh bị cổng chặn). Báo kèm **số đếm tuyệt đối** (để so với `wrongful_carrier_faults_max`) và tỉ lệ theo từng hãng. Kiện không tìm thấy trong DB hoặc không có chính sách hiệu lực → tính là oan (không có căn cứ thì không được ghi lỗi). Lần chạy không tới bước ghi lỗi → loại khỏi mẫu số, đếm riêng. Ngoài ra đếm riêng **bỏ sót**: ca `carrier_at_fault` = True mà agent không ghi (không gộp vào tỉ lệ oan) | |
 | **Khung thời gian / ngưỡng báo động** | (không áp dụng) | |
-| **Điểm mù** (thước đo này KHÔNG thấy gì) | | |
+| **Điểm mù** (thước đo này KHÔNG thấy gì) | Không thấy khi chính `delay_cause` trong tracking DB bị ghi sai (nhãn kế thừa lỗi của nguồn sự thật); không thấy tác hại khi strike đúng nhưng vượt trần `max_auto_strikes_per_carrier_per_day` (đó là luật vận hành, không phải đúng/sai của bước); không thấy dữ liệu cá nhân lọt ở bước `notify_carrier` đi kèm | |
 
 **Ví dụ mẫu (bước "chọn độ trễ" của agent, đừng chép):**
 Thước đo: tỉ lệ lần chạy mà độ trễ agent dùng để tính tiền khác độ trễ theo tracking DB. Dữ liệu: sự kiện `proposal.delay_days_used`
@@ -71,9 +71,9 @@ nhau chia cho số lần chạy có sự kiện `proposal`; lần chạy không 
 
 ### Câu 1.5 · Chọn MỘT kết luận và giải thích một câu
 
-Số minh hoạ trong đề (không phải số của bàn). Khoanh: **(a) · (b) · (c) · (d)**
+Số minh hoạ trong đề (không phải số của bàn). Khoanh: **(b)**
 
-Giải thích một câu: …
+Giải thích một câu: Y hơn X đúng 1/50 lần chạy, và 1,0 của Y vẫn nằm trong khoảng tin cậy 95% [0,94; 1,0] của X, nên chưa đủ căn cứ nói Y tốt hơn X có ý nghĩa thống kê.
 
 ---
 
