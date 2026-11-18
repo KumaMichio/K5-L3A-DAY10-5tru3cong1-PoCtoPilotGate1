@@ -52,19 +52,21 @@ Chạy **trước khi sửa bất cứ thứ gì**:
 python3 -m lab10.grade --incident Sx
 ```
 
-- Mã lần chạy grade: `__________` · base: `__________` · prepared: `__________`
-- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): …
-- Khối kinh doanh và vận hành còn dòng nào vượt trần: …
+- Mã lần chạy grade: `R-S1-grade-20261118-164454-d20ae0` · base: `R-S1-before-20261118-164454-d20ae0` · prepared: `R-S1-prepared-20261118-164454-d20ae0`
+- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): pass_rate 0,3077 → 0,6154; hoàn sai 985.000đ → 275.000đ; lỗi hãng oan 30 → 15; ROI −2,74 → −0,1. Đỡ được nhánh khách khai trễ **cao hơn** tracking (`S1-01…04` chuyển người). Chưa đỡ: `S1-07`, `S1-20`, `S1-21`, `S1-42`, `S1-43`.
+- Khối kinh doanh và vận hành còn dòng nào vượt trần: **ROI −0,1 < 0,5**; ngoài ra trượt ngưỡng đã ký chi phí 6.387đ > 6.000đ. Hàng chờ ổn (0 ca ùn), tổng hoàn 84.000đ/ngày ≪ trần.
 
 **Mở lại pre-mortem (Phiếu B mục B6), viết bằng bút khác màu.** Với thẻ S1, S3, S4, S5 đây là một phần của phần riêng theo thẻ.
 
-- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? …
-- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? …
+- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? **Pháp lý** (bên thứ ba bị phạt oan, dọa nghỉ tuyến) do **kỹ thuật/dữ liệu** (tracking thiếu ngày giao, khách khai sai) và **con người và vận hành** (lỗi dồn trong một ngày, không ai duyệt).
+- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? **Một phần.** B6 dòng 1 (tin số khách khai) và dòng "hãng bị phạt khi tracking chưa ghi nguyên nhân" có trong pre-mortem; cổng vòng 1 giảm lỗi oan 30 → 15. **Không nghĩ tới:** (a) tracking ghi `DELIVERED` mà **thiếu** ngày giao — bàn coi tracking luôn đủ (B3 chỉ nói tới ngày nhập sai, không nói ngày trống); (b) lỗi đến **theo cụm** trong một ngày — B6 nói tới cao điểm số ticket, không nói tới cụm lỗi của một hãng; (c) khách khai trễ **thấp hơn** thực tế (cổng chỉ nhìn chiều "đòi quá").
 - Lý do còn thiếu, thêm bây giờ:
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được bằng gì (trace / data / config nào) |
 |---|---|---|
-| | | |
+| Tracking ghi kiện đã giao nhưng thiếu ngày giao, trợ lý tính trễ tới hôm nay ⇒ hoàn sai và phạt hãng oan | Kỹ thuật (dữ liệu) | `incidents/S1/world_patch.json` (`O-2120`, `O-2121`); trace `S1-20@11` (`db_delay_days` 6) |
+| Một hãng bị tự động ghi 4 lỗi trong một ngày, không ai duyệt, chạm ngưỡng tạm ngưng tuyến | Con người và vận hành | Loạt `S1-40…43`; `ops_limits.max_auto_strikes_per_carrier_per_day` = 2; metric `max_auto_strikes_one_carrier` |
+| Khách khai trễ ít hơn thực tế, trợ lý từ chối oan và bỏ sót lỗi hãng thật | Kỹ thuật (đầu vào) | Trace `S1-07@11` (`model_override` db 4, ticket 2) |
 
 ---
 
@@ -275,7 +277,7 @@ Vì sao có thể sai: ngoài thực tế tài xế bấm giao khi mất sóng r
 
 <a id="c6"></a>
 
-## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `__________`)
+## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `R-S1-prepared-20261118-164454-d20ae0`)
 
 **Khung tư duy.** Đi từ **tác hại** ngược về nguyên nhân, không đi từ lỗi mình tình cờ thấy. Mỗi tầng hỏi "điều gì phải xảy
 ra thì điều trên mới xảy ra", nối bằng **HOẶC** (một trong các nhánh là đủ) hoặc **VÀ** (phải đồng thời). Một biện pháp tốt
@@ -290,21 +292,22 @@ thường biến một nhánh HOẶC thành VÀ: tác hại chỉ còn xảy ra 
 Ít nhất hai nhánh ở hai tầng khác nhau (kỹ thuật, kinh doanh, con người); mỗi lá có bằng chứng (ticket@seed, trường dữ liệu, hoặc một dòng của report).
 
 ```
-[ĐỈNH] Tác hại: ______________________________ (cho ai: __________, đo bằng: __________)
+[ĐỈNH] Tác hại: GHSH và tài xế bị ghi lỗi oan nhiều lần trong một ngày (cho ai: hãng GHSH, 12 tài xế; đo bằng: wrongful_carrier_faults = 15 trên S1 ở prepared, 150.000đ/lỗi)
  └─ HOẶC
- ├─ [1] ______________________________ tầng: đầu vào / data / hành động / quyền hạn / vận hành / kinh doanh
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- ├─ [2] ______________________________ tầng: ______
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- └─ [3] ______________________________ tầng: ______
- └─ vì: ________________________ bằng chứng: ______
+ ├─ [1] Độ trễ bị thổi phồng vì tracking THIẾU ngày giao        tầng: data
+ │ └─ vì: kiện DELIVERED nhưng delivered_date trống ⇒ db_delay_days tính tới as_of    bằng chứng: ticket S1-20@11 (trễ "6 ngày"), S1-21@11
+ ├─ [2] Một hãng bị tự ghi quá trần lỗi trong ngày             tầng: vận hành / quyền hạn
+ │ └─ vì: cổng không đếm lỗi theo hãng, không ai duyệt lỗi thứ 3+    bằng chứng: ticket S1-42@11, S1-43@11 (lỗi GHSH thứ 3, 4)
+ ├─ [3] Trợ lý tin số khách khai thay vì tracking               tầng: đầu vào
+ │ └─ vì: model_override; cổng vòng 1 chỉ chặn chiều "đòi quá"    bằng chứng: ticket S1-07@11 (khai 2, DB 4: từ chối oan, bỏ sót lỗi VNX thật)
+ └─ [4] Nguyên nhân trễ / hãng do điều phối gán sai, hoặc lỗi dồn qua nhiều ngày   tầng: data / vận hành
+   └─ vì: cổng tin delay_cause, carrier_id; trần chỉ theo ngày    bằng chứng: hợp đồng 3 lỗi/7 ngày (`carriers` GHSH); chưa có ticket trong gói
 ```
-
 | Lá | Specification bị vi phạm (phần mềm phải làm gì) | Giả định môi trường đã sai (thế giới ngoài phần mềm) |
 |---|---|---|
-| [1] | | |
-| [2] | | |
-| [3] | | |
+| [1] | Kiện `DELIVERED` thiếu `delivered_date` thì không được tự tính trễ, không ghi lỗi, phải chuyển người | Máy quét luôn ghi ngày giao khi kiện chuyển `DELIVERED` |
+| [2] | Không tự ghi quá `max_auto_strikes_per_carrier_per_day` = 2 lỗi/hãng/ngày; lỗi tiếp theo phải có người duyệt | Lỗi của một hãng đến rải rác, có người ở LogiX nhìn thấy trước bảng lỗi buổi sáng |
+| [3] | Độ trễ dùng để hoàn tiền và ghi lỗi phải lấy từ tracking DB, cả khi khách khai thấp hơn | Khách chỉ khai sai theo chiều có lợi cho mình |
 
 **Ví dụ mẫu một nhánh (bộ nền, đừng chép):** đỉnh "hãng VNX nhận lỗi oan cho đơn O-1002" ← [1] agent dùng độ trễ 5 ngày ←
 model lấy số trong ticket đè lên DB (`T-002@55`). Spec bị vi phạm: độ trễ dùng để ghi lỗi phải lấy từ tracking DB. Giả định
@@ -448,30 +451,30 @@ Cột v1 nằm ở Phiếu B mục B8; không sửa cột đó.
 
 | | **v2** (phút 185–200, SAU sự cố) |
 |---|---|
-| Commit ký tiêu chí | phải giống v1 |
-| Hash chốt cổng vòng 1 | phải giống v1 |
-| Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: ________ · prepared: ________ · after: ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | |
-| Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | |
-| Nếu Dừng: bài học ghi lại | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Commit ký tiêu chí | `ee29908` · hash `032f9246` (giống v1, KHÔNG ĐỔI) |
+| Hash chốt cổng vòng 1 | `f4cec4d7` (giống v1, còn nguyên) |
+| Mã lần chạy dùng làm bằng chứng | thẻ S1, mốc base: `R-S1-before-20261118-171219-04b4f6` · prepared: `R-S1-prepared-20261118-171219-04b4f6` · after: `R-S1-after-20261118-171219-04b4f6` (cùng lần tự kiểm tra `R-S1-grade-20261118-171219-04b4f6`; bộ nền after: `R-base-after-20261118-170244-3be8b1`) |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | **Không** (S1 và bộ nền). S1 after: 0 ca ùn, chờ lâu nhất 0 phút; 5.925đ/ticket (≤ 6.000đ); ROI 0,69; hoàn tự động 84.000đ/ngày ≪ trần 1.500.000đ; 0 lỗi oan, 0 lộ dữ liệu. |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | **Kho CT: 7.295đ/ticket trên S1** (> 6.000đ, < làm tay 10.000đ), vì 2/3 ticket CT là kiện `DELIVERED` thiếu ngày giao (`O-2120`, `O-2121`) được chuyển người đúng cách. **Không đổi quyết định:** đã thử bỏ CT (`pilot_scope` = HN, DN, HCM): S1 rẻ hơn (5.514đ) nhưng bộ nền tệ đi (ROI 1,24 → 0,89, độ phủ 0,82) vì ngày thường CT là kho rẻ nhất (665đ). CT chỉ đắt trong ngày sự cố ⇒ theo dõi, chưa cắt. |
+| Quyết định (khoanh một) | **Tiếp tục** · ~~Thu hẹp~~ · ~~Cải tiến thêm~~ · ~~Dừng~~ — có điều kiện (xem "Chỉ ở v2") |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | S1 after (`R-S1-after-20261118-171219-04b4f6`): **9/9 ngưỡng đã ký đạt**: pass_rate 1,0, pass_k 1,0, hoàn sai 0đ, lỗi hãng oan 0, lộ dữ liệu 0, escalation 0,2308 ≤ 0,25, chi phí 5.925đ ≤ 6.000đ, ROI 0,69 ≥ 0,5, queue_stuck 0. |
+| Bằng chứng 2 | So prepared → after trên S1: lỗi hãng oan 15 → 0, hoàn sai 275.000đ → 0, hoàn thiếu 105.000đ → 0, pass_rate 0,6154 → 1,0 (4 bản sửa ở C7). Monitor `max_auto_strikes_one_carrier` 4 → 2 (đúng trần `ops_limits`). |
+| Bằng chứng 3 | Bộ nền sau sửa (`R-base-after-20261118-170244-3be8b1`): pass_rate 1,0, 0 ca mới hỏng (regression ✅), chi phí 4.456đ, ROI 1,24. Tự kiểm tra `R-S1-grade-20261118-171219-04b4f6`: criteria ✅, visible ✅, regression ✅, monitor ✅. |
+| Khớp dòng nào trong `decision_rule` đã ký? | **"Tiếp tục"**: 5 ngưỡng required đạt trên bộ nền **và** gói sự cố S1, chi phí ≤ 6.000đ, ROI ≥ 0,5, queue_stuck = 0. Vế còn thiếu ở v1 ("trên gói sự cố") nay đã có số. |
+| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | (không áp dụng; điều kiện chuyển sang Thu hẹp CT ghi ở "Chỉ ở v2") |
+| Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | (không áp dụng) |
+| Nếu Dừng: bài học ghi lại | (không áp dụng) |
+| Ngày quyết định lại (trừ khi Dừng) | **2026-11-30**, trước khi REFUND-v4 có hiệu lực (giữ như v1) |
+| PIC ký | Khuất Duy Hiếu (P2, đề xuất) · cả bàn thống nhất · PIC vận hành: Lê Thanh Tùng (NV-TUNG) |
 
 **Chỉ ở v2**
-- Quyết định đổi hay giữ so với v1? Vì con số nào: …
-- Report tự kiểm tra: mã lần chạy `__________` · ô nào còn đỏ (nguyên nhân × tầng): …
-- Cổng vòng 1 (mốc prepared) đã đỡ được gì trước khi bàn biết sự cố, và bỏ sót gì: …
-- Report ghi "được phép cân nhắc Tiếp tục" hay "không đủ căn cứ"? Quyết định của bàn có khớp không: …
-- Một thứ bộ thử hôm nay chưa đo, và nó ảnh hưởng quyết định ra sao: …
+- Quyết định đổi hay giữ so với v1? Vì con số nào: **Giữ Tiếp tục, thêm điều kiện.** v1 chỉ có số bộ nền; v2 có thêm S1: mốc prepared trượt 6 ngưỡng (15 lỗi oan, ROI −0,1), sau 4 bản sửa đạt 9/9. **Điều kiện:** (1) chi phí S1 chỉ dưới trần 75đ ⇒ nếu chi phí/ticket > 6.000đ hai ngày liền thì xét Thu hẹp; (2) tỉ lệ kiện `DELIVERED` thiếu ngày giao của một kho > 5% ba ngày liền (C10) ⇒ thu hẹp kho đó (ứng viên: CT); (3) `claim_override_rate` > 10%/ngày ⇒ NV-HANH kiểm mẫu các ca bản sửa 4 tự từ chối / hạ tiền.
+- Report tự kiểm tra: mã lần chạy `R-S1-grade-20261118-171219-04b4f6` · ô nào còn đỏ (nguyên nhân × tầng): chỉ **1 integrity** ❌, do repo mới có `incidents/S1`, chưa kéo đủ S2–S8 từ repo mẫu (thủ tục, không phải code/kinh doanh); kéo đủ bằng lệnh ở `incidents/README.md` rồi chạy lại. Các ô 2, 3, 5, 6 ✅; ô 4 (ẩn) team chấm chạy sau.
+- Cổng vòng 1 (mốc prepared) đã đỡ được gì trước khi bàn biết sự cố, và bỏ sót gì: **Đỡ:** khách khai trễ cao hơn tracking (S1-01…04), lỗi hãng oan 30 → 15, hoàn sai 985.000đ → 275.000đ. **Bỏ sót:** kiện đã giao thiếu ngày giao (S1-20/21, dữ liệu THIẾU), trần lỗi/hãng/ngày (S1-42/43), khách khai THẤP hơn tracking (S1-07), và chi phí do chuyển người quá nhiều.
+- Report ghi "được phép cân nhắc Tiếp tục" hay "không đủ căn cứ"? Quyết định của bàn có khớp không: mốc after không còn dòng vượt trần hay ngưỡng chưa đạt (trước sửa 4 report ghi "KHÔNG đủ căn cứ để chọn Tiếp tục" vì chi phí 8.656đ, ROI 0,16). Quyết định Tiếp tục **khớp**.
+- Một thứ bộ thử hôm nay chưa đo, và nó ảnh hưởng quyết định ra sao: **trường hợp tracking SAI mà vẫn đủ trường** (ngày giao nhập nhầm, `delay_cause` gán sai). Sau bản sửa 4, cổng hoàn tin hẳn tracking nên ca này không còn người nhìn lại. Nếu pilot thật cho thấy tỉ lệ này đáng kể thì phải trả nhánh (d) về `escalate` và chi phí sẽ vượt 6.000đ ⇒ quyết định đổi sang Thu hẹp.
 
 **Ba dòng bắt buộc** (chép nguyên ba câu này sang `submission/submission.json`, mục `three_lines`)
-1. Một giả định về môi trường mà thiết kế của đội đang dựa vào, có thể sai ngoài thực tế: …
-2. Gate của đội chỉ GIẢM khả năng hay thực sự NGĂN được tác hại? Vì sao: …
-3. Vì data là mock, cần đo lại gì trong pilot thật trước Bước đánh giá 2: …
+1. Một giả định về môi trường mà thiết kế của đội đang dựa vào, có thể sai ngoài thực tế: Tracking DB là nguồn sự thật đáng tin: khi kiện `DELIVERED` thì máy quét luôn ghi `delivered_date`, và ngày giao, `delay_cause` không bị nhập sai; ngoài thực tế tài xế mất sóng, điểm phát nhập bù cuối ca (S1 có 2/13 kiện đã giao thiếu ngày giao), và cổng của bàn tự hoàn, tự từ chối, tự ghi lỗi hãng theo đúng các trường này.
+2. Gate của đội chỉ GIẢM khả năng hay thực sự NGĂN được tác hại? Vì sao: NGĂN được hai nhánh có dữ liệu rõ (không hoàn quá quyền lợi tính từ tracking; không ghi lỗi hãng khi kiện đã giao mà thiếu ngày giao hoặc nguyên nhân không thuộc lỗi hãng), nhưng chỉ GIẢM tác hại với hãng: trần 2 lỗi/hãng/ngày không biết 2 lỗi đó có oan không và không thấy cửa sổ 3 lỗi/7 ngày của hợp đồng; mọi cổng đều dựa vào tracking nên tracking sai mà đủ trường thì cổng vẫn cho qua.
+3. Vì data là mock, cần đo lại gì trong pilot thật trước Bước đánh giá 2: (a) tỉ lệ kiện `DELIVERED` thiếu ngày giao và tỉ lệ tracking sai theo từng kho (đối chiếu chữ ký người nhận, kiểm mẫu 10% của NV-OANH); (b) chi phí/ticket và ROI thật với lượng ticket thật mỗi ngày, vì phí trực 30.000đ/ca chia cho 13–22 ticket đang quyết định chi phí và biên S1 chỉ còn 75đ; (c) số lỗi mỗi hãng theo cửa sổ 7 ngày và tỉ lệ hãng khiếu nại; (d) tiền LLM và độ dao động của model thật thay MockLLM tất định.

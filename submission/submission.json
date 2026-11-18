@@ -7,10 +7,10 @@
   ],
   "incident": "S1",
   "decision_v1": "Tiếp tục",
-  "decision_v2": "",
+  "decision_v2": "Tiếp tục",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Tracking DB là nguồn sự thật đáng tin: khi kiện `DELIVERED` thì máy quét luôn ghi `delivered_date`, và ngày giao, `delay_cause` không bị nhập sai; ngoài thực tế tài xế mất sóng, điểm phát nhập bù cuối ca (S1 có 2/13 kiện đã giao thiếu ngày giao), và cổng của bàn tự hoàn, tự từ chối, tự ghi lỗi hãng theo đúng các trường này.",
+    "reduce_or_prevent": "NGĂN được hai nhánh có dữ liệu rõ (không hoàn quá quyền lợi tính từ tracking; không ghi lỗi hãng khi kiện đã giao mà thiếu ngày giao hoặc nguyên nhân không thuộc lỗi hãng), nhưng chỉ GIẢM tác hại với hãng: trần 2 lỗi/hãng/ngày không biết 2 lỗi đó có oan không và không thấy cửa sổ 3 lỗi/7 ngày của hợp đồng; mọi cổng đều dựa vào tracking nên tracking sai mà đủ trường thì cổng vẫn cho qua.",
+    "measure_in_pilot": "(a) tỉ lệ kiện `DELIVERED` thiếu ngày giao và tỉ lệ tracking sai theo từng kho (đối chiếu chữ ký người nhận, kiểm mẫu 10% của NV-OANH); (b) chi phí/ticket và ROI thật với lượng ticket thật mỗi ngày, vì phí trực 30.000đ/ca chia cho 13–22 ticket đang quyết định chi phí và biên S1 chỉ còn 75đ; (c) số lỗi mỗi hãng theo cửa sổ 7 ngày và tỉ lệ hãng khiếu nại; (d) tiền LLM và độ dao động của model thật thay MockLLM tất định."
   }
 }
