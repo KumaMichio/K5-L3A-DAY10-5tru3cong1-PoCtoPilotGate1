@@ -132,6 +132,31 @@ def _gate_notify(ctx, action):
     return None
 
 
+def _gate_reply(ctx, action):
+    """VÒNG 2 · S1: trợ lý TỪ CHỐI (không ghi hoàn) trong khi tracking + chính sách cho khách được hoàn.
+    Xảy ra khi khách khai trễ THẤP hơn tracking và model tin số khai. Chỉ xét nhánh từ chối sau khi đã có đề xuất:
+    không có lệnh issue_refund nào đã ghi, và không phải do cổng của bàn chặn lệnh hoàn (đơn đã hoàn, v.v.)."""
+    ev = ctx.events
+    if not any(e.get("type") == "proposal" for e in ev):
+        return None
+    if any(e.get("type") == "tool" and e.get("tool") == "issue_refund" for e in ev):
+        return None
+    if any(e.get("type") == "gate" and e.get("tool") == "issue_refund" for e in ev):
+        return None
+    order = ctx.tools.lookup_order(ctx.ticket.get("order_id"))
+    pol = _policy(ctx)
+    if order is None or pol is None:
+        return None
+    parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+    if _delivered_without_date(parcel):
+        return None
+    entitled = H.entitlement_vnd(pol, order, H.db_delay_days(parcel, ctx.as_of), parcel.get("delay_cause"))
+    if int(action.get("amount_vnd") or 0) < entitled:
+        ctx.log("reply_under_entitlement", amount_vnd=action.get("amount_vnd", 0), entitled_vnd=entitled)
+        return Verdict.escalate(f"cổng trả lời: trợ lý từ chối nhưng theo tracking và chính sách khách được {entitled}đ, chuyển người")
+    return None
+
+
 def write_gate(ctx, action):
     # action = {"tool": "issue_refund", "ticket_id":..., "order_id":..., "amount_vnd":..., "payer":..., ...}
     tool = action.get("tool")
@@ -141,6 +166,8 @@ def write_gate(ctx, action):
         v = _gate_carrier_fault(ctx, action)
     elif tool == "notify_carrier":
         v = _gate_notify(ctx, action)
+    elif tool == "send_reply":
+        v = _gate_reply(ctx, action)
     else:
         v = None
     if v is not None:

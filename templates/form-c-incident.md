@@ -35,6 +35,8 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 | 3 | `R-base-after-20261118-165145-2fc080` | base · after | (kiểm không regression sau sửa 1) | 1,0 [1,0; 1,0] | 1,0 | 0 · 0 · 0 | 0,2364 | Bộ nền không ca nào hỏng. |
 | 4 | `R-S1-after-20261118-165222-daeaac` | S1 · after | **Sửa 2:** `file_carrier_fault` → `deny` khi hãng đã có ≥ `ops_limits.max_auto_strikes_per_carrier_per_day` (= 2) lỗi tự động trong ngày (khách vẫn được hoàn) | 0,9231 [0,7692; 1,0] | 0,9231 | 0 · 0 · 0 | 0,4615 | Hết lỗi hãng oan, S1-42 và S1-43 đạt; chỉ còn S1-07 hỏng; ROI vẫn 0,27 (sửa này không thêm ca chuyển người). |
 | 5 | `R-base-after-20261118-165223-daeaac` | base · after | (kiểm không regression sau sửa 2) | 1,0 [1,0; 1,0] | 1,0 | 0 · 0 · 0 | 0,2364 | Bộ nền không ca nào hỏng. |
+| 6 | `R-S1-after-20261118-165319-a77ecb` | S1 · after | **Sửa 3:** `send_reply` ở nhánh từ chối (đã có `proposal`, chưa ghi `issue_refund`, không do cổng chặn) mà số tiền < quyền lợi tính từ tracking + chính sách hiệu lực → `escalate` | 1,0 [1,0; 1,0] | 1,0 | 0 · 0 · 0 (hoàn thiếu 105.000 → 0) | 0,5385 | Gói S1 sạch hết ticket hỏng; nhưng chuyển người 0,54, chi phí 8.656đ/ticket > 6.000đ đã ký, ROI 0,16 < 0,5: phần còn lại là kinh doanh/vận hành. |
+| 7 | `R-base-after-20261118-165319-a77ecb` | base · after | (kiểm không regression sau sửa 3) | 1,0 [1,0; 1,0] | 1,0 | 0 · 0 · 0 | 0,2364 | Bộ nền không ca nào hỏng, chi phí 4.510đ, ROI 1,22. |
 
 ---
 
@@ -320,7 +322,7 @@ python3 -m lab10.grade --incident Sx
 |---|---|---|---|---|---|
 | [1] Kỹ thuật · độ trễ sai do dữ liệu thiếu | Kiện `status: DELIVERED` nhưng `delivered_date: null` (`O-2120`, `O-2121`); `helpers.db_delay_days` không đọc `status` nên tính trễ tới `as_of` (S1-20@11 "trễ 6 ngày") → hoàn sai và ghi lỗi GHSH cho đơn đã giao, có chữ ký | `guards.py`: hàm `_delivered_without_date(parcel)`; `write_gate` / `issue_refund` → `escalate`; `write_gate` / `file_carrier_fault` → `deny` | Chặn | **NGĂN hẳn** nhánh này: không lệnh ghi nào chạy khi tracking mâu thuẫn (đã giao mà không có ngày), ca chuyển người kiểm. Không ngăn được trường hợp ngày giao có nhưng bị nhập sai | `R-S1-after-20261118-165145-2fc080` |
 | [2] Vận hành · không có trần và không người duyệt | Loạt `S1-40`…`S1-43` cùng một ngày: GHSH nhận lỗi tự động thứ 3, thứ 4 (S1-42@11, S1-43@11), vượt `ops_limits.max_auto_strikes_per_carrier_per_day` = 2; hợp đồng GHSH: 3 lỗi/7 ngày là tạm ngưng tuyến, 150.000đ/lỗi; "không ai bên LogiX duyệt" | `guards.py`: `write_gate` / `file_carrier_fault`, đếm `ctx.tools.fault_rows(carrier_id=…)` ≥ trần → `deny` + `ctx.log("strike_cap_hit")`; khách vẫn được hoàn | Giới hạn thiệt hại | **GIẢM khả năng:** chặn hãng bị tự động ghi quá 2 lỗi/ngày, nhưng không nói được lỗi thứ 1–2 có oan hay không, và trần là theo ngày còn hợp đồng tính theo 7 ngày | `R-S1-after-20261118-165222-daeaac` |
-| [3] | | | | | |
+| [3] Kỹ thuật · đầu vào (nhánh tác hại cho khách) | Khách khai trễ THẤP hơn tracking (S1-07@11: khai 2, DB 4) → `model_override` → `proposal 0đ` → từ chối; khách mất 21.000đ và lỗi thật của VNX không được ghi. Cổng 1 vòng 1 chỉ chặn số tiền quá cao, và nhánh từ chối không gọi `issue_refund` | `guards.py`: `write_gate` / `send_reply` (hàm `_gate_reply`): chỉ ở nhánh từ chối sau `proposal`; số tiền trả lời < `entitlement_vnd` theo tracking → `escalate` | Phát hiện + chuyển người | **NGĂN** việc trợ lý tự từ chối oan (ca chuyển người duyệt hoàn đúng 21.000đ); không tự hoàn bù vì cổng không được ghi thay agent | `R-S1-after-20261118-165319-a77ecb` |
 
 ---
 
