@@ -30,10 +30,9 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | | Sx · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | | | | | |
-| 2 | | Sx · after | | | | | | |
-| 3 | | Sx · after | | | | | | |
-| 4 | | base · after | (kiểm không regression) | | | | | |
+| 1 | `R-S1-prepared-20261118-165129-d20ae0` (grade: `R-S1-grade-20261118-162957-d20ae0`) | S1 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 0,6154 [0,3077; 0,8462] | 0,6154 | 275.000 · 15 · 0 | 0,3077 | Cổng vòng 1 đỡ được nhánh khách khai trễ cao (S1-01…04), nhưng còn hỏng S1-07, S1-20, S1-21, S1-42, S1-43; ROI −0,1 vượt trần. |
+| 2 | `R-S1-after-20261118-165145-2fc080` | S1 · after | **Sửa 1:** kiện `DELIVERED` mà thiếu `delivered_date` thì `issue_refund` → `escalate`, `file_carrier_fault` → `deny` | 0,7692 [0,5385; 1,0] | 0,7692 | 0 · 10 · 0 | 0,4615 | Hết hoàn sai, S1-20 và S1-21 đạt; ROI lên 0,27 nhưng vẫn < 0,5; còn S1-07, S1-42, S1-43. |
+| 3 | `R-base-after-20261118-165145-2fc080` | base · after | (kiểm không regression sau sửa 1) | 1,0 [1,0; 1,0] | 1,0 | 0 · 0 · 0 | 0,2364 | Bộ nền không ca nào hỏng. |
 
 ---
 
@@ -315,7 +314,7 @@ python3 -m lab10.grade --incident Sx
 
 | Nhánh fault tree | Nguyên nhân | Chỗ sửa (hàm + nhánh trong `guards.py`, hoặc khoá trong `operating_gates.json`) | Tầng (phát hiện / chặn / giới hạn thiệt hại / vận hành) | GIẢM khả năng hay NGĂN hẳn? Vì sao | Mã lần chạy sau khi sửa |
 |---|---|---|---|---|---|
-| [1] | | | | | |
+| [1] Kỹ thuật · độ trễ sai do dữ liệu thiếu | Kiện `status: DELIVERED` nhưng `delivered_date: null` (`O-2120`, `O-2121`); `helpers.db_delay_days` không đọc `status` nên tính trễ tới `as_of` (S1-20@11 "trễ 6 ngày") → hoàn sai và ghi lỗi GHSH cho đơn đã giao, có chữ ký | `guards.py`: hàm `_delivered_without_date(parcel)`; `write_gate` / `issue_refund` → `escalate`; `write_gate` / `file_carrier_fault` → `deny` | Chặn | **NGĂN hẳn** nhánh này: không lệnh ghi nào chạy khi tracking mâu thuẫn (đã giao mà không có ngày), ca chuyển người kiểm. Không ngăn được trường hợp ngày giao có nhưng bị nhập sai | `R-S1-after-20261118-165145-2fc080` |
 | [2] | | | | | |
 | [3] | | | | | |
 

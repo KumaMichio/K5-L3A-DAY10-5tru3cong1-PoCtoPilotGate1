@@ -46,6 +46,12 @@ def pre_guard(ctx):
     return Verdict.allow()
 
 
+def _delivered_without_date(parcel):
+    """VÒNG 2 · S1: tracking mâu thuẫn — trạng thái đã giao nhưng thiếu ngày giao.
+    helpers.db_delay_days không đọc status, nên độ trễ bị tính tới as_of (tăng dần theo ngày chạy): dữ liệu THIẾU, không phải trễ."""
+    return parcel.get("status") == "DELIVERED" and not parcel.get("delivered_date")
+
+
 def _gate_refund(ctx, action):
     """CỔNG 1 · issue_refund: số tiền phải khớp quyền lợi tính lại từ nguồn sự thật.
     HAZOP issue_refund: MORE (hoàn quá), OTHER THAN (người trả sai, phê duyệt sai đơn), AS WELL AS (hoàn hai lần)."""
@@ -68,6 +74,9 @@ def _gate_refund(ctx, action):
 
     # (d) số tiền không vượt quyền lợi tính từ tracking DB + chính sách hiệu lực
     parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+    if _delivered_without_date(parcel):
+        ctx.log("delivered_without_date", parcel_id=parcel.get("parcel_id"))
+        return Verdict.escalate("cổng hoàn: tracking ghi đã giao nhưng thiếu ngày giao, cần người kiểm")
     delay = H.db_delay_days(parcel, ctx.as_of)
     entitled = H.entitlement_vnd(pol, order, delay, parcel.get("delay_cause"))
     amount = int(action.get("amount_vnd") or 0)
@@ -93,6 +102,8 @@ def _gate_carrier_fault(ctx, action):
     if order is None or pol is None:
         return Verdict.deny("cổng lỗi hãng: thiếu đơn hoặc chính sách hiệu lực")
     parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+    if _delivered_without_date(parcel):
+        return Verdict.deny("cổng lỗi hãng: tracking ghi đã giao nhưng thiếu ngày giao, không có căn cứ tính trễ")
     delay = H.db_delay_days(parcel, ctx.as_of)
     if not H.carrier_at_fault(pol, parcel, delay):
         return Verdict.deny("cổng lỗi hãng: tracking không ghi nguyên nhân thuộc lỗi hãng")
