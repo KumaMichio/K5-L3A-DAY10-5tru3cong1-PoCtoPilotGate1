@@ -33,6 +33,8 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 | 1 | `R-S1-prepared-20261118-165129-d20ae0` (grade: `R-S1-grade-20261118-162957-d20ae0`) | S1 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 0,6154 [0,3077; 0,8462] | 0,6154 | 275.000 · 15 · 0 | 0,3077 | Cổng vòng 1 đỡ được nhánh khách khai trễ cao (S1-01…04), nhưng còn hỏng S1-07, S1-20, S1-21, S1-42, S1-43; ROI −0,1 vượt trần. |
 | 2 | `R-S1-after-20261118-165145-2fc080` | S1 · after | **Sửa 1:** kiện `DELIVERED` mà thiếu `delivered_date` thì `issue_refund` → `escalate`, `file_carrier_fault` → `deny` | 0,7692 [0,5385; 1,0] | 0,7692 | 0 · 10 · 0 | 0,4615 | Hết hoàn sai, S1-20 và S1-21 đạt; ROI lên 0,27 nhưng vẫn < 0,5; còn S1-07, S1-42, S1-43. |
 | 3 | `R-base-after-20261118-165145-2fc080` | base · after | (kiểm không regression sau sửa 1) | 1,0 [1,0; 1,0] | 1,0 | 0 · 0 · 0 | 0,2364 | Bộ nền không ca nào hỏng. |
+| 4 | `R-S1-after-20261118-165222-daeaac` | S1 · after | **Sửa 2:** `file_carrier_fault` → `deny` khi hãng đã có ≥ `ops_limits.max_auto_strikes_per_carrier_per_day` (= 2) lỗi tự động trong ngày (khách vẫn được hoàn) | 0,9231 [0,7692; 1,0] | 0,9231 | 0 · 0 · 0 | 0,4615 | Hết lỗi hãng oan, S1-42 và S1-43 đạt; chỉ còn S1-07 hỏng; ROI vẫn 0,27 (sửa này không thêm ca chuyển người). |
+| 5 | `R-base-after-20261118-165223-daeaac` | base · after | (kiểm không regression sau sửa 2) | 1,0 [1,0; 1,0] | 1,0 | 0 · 0 · 0 | 0,2364 | Bộ nền không ca nào hỏng. |
 
 ---
 
@@ -317,7 +319,7 @@ python3 -m lab10.grade --incident Sx
 | Nhánh fault tree | Nguyên nhân | Chỗ sửa (hàm + nhánh trong `guards.py`, hoặc khoá trong `operating_gates.json`) | Tầng (phát hiện / chặn / giới hạn thiệt hại / vận hành) | GIẢM khả năng hay NGĂN hẳn? Vì sao | Mã lần chạy sau khi sửa |
 |---|---|---|---|---|---|
 | [1] Kỹ thuật · độ trễ sai do dữ liệu thiếu | Kiện `status: DELIVERED` nhưng `delivered_date: null` (`O-2120`, `O-2121`); `helpers.db_delay_days` không đọc `status` nên tính trễ tới `as_of` (S1-20@11 "trễ 6 ngày") → hoàn sai và ghi lỗi GHSH cho đơn đã giao, có chữ ký | `guards.py`: hàm `_delivered_without_date(parcel)`; `write_gate` / `issue_refund` → `escalate`; `write_gate` / `file_carrier_fault` → `deny` | Chặn | **NGĂN hẳn** nhánh này: không lệnh ghi nào chạy khi tracking mâu thuẫn (đã giao mà không có ngày), ca chuyển người kiểm. Không ngăn được trường hợp ngày giao có nhưng bị nhập sai | `R-S1-after-20261118-165145-2fc080` |
-| [2] | | | | | |
+| [2] Vận hành · không có trần và không người duyệt | Loạt `S1-40`…`S1-43` cùng một ngày: GHSH nhận lỗi tự động thứ 3, thứ 4 (S1-42@11, S1-43@11), vượt `ops_limits.max_auto_strikes_per_carrier_per_day` = 2; hợp đồng GHSH: 3 lỗi/7 ngày là tạm ngưng tuyến, 150.000đ/lỗi; "không ai bên LogiX duyệt" | `guards.py`: `write_gate` / `file_carrier_fault`, đếm `ctx.tools.fault_rows(carrier_id=…)` ≥ trần → `deny` + `ctx.log("strike_cap_hit")`; khách vẫn được hoàn | Giới hạn thiệt hại | **GIẢM khả năng:** chặn hãng bị tự động ghi quá 2 lỗi/ngày, nhưng không nói được lỗi thứ 1–2 có oan hay không, và trần là theo ngày còn hợp đồng tính theo 7 ngày | `R-S1-after-20261118-165222-daeaac` |
 | [3] | | | | | |
 
 ---

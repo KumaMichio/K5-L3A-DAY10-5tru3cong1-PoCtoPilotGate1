@@ -107,6 +107,12 @@ def _gate_carrier_fault(ctx, action):
     delay = H.db_delay_days(parcel, ctx.as_of)
     if not H.carrier_at_fault(pol, parcel, delay):
         return Verdict.deny("cổng lỗi hãng: tracking không ghi nguyên nhân thuộc lỗi hãng")
+    # VÒNG 2 · S1: trần lỗi TỰ ĐỘNG cho một hãng trong ngày (ops_limits, đã thống nhất với Ops/Finance).
+    # Từ lỗi thứ (trần + 1) phải có người duyệt; khách vẫn được hoàn, chỉ lệnh ghi lỗi bị bỏ.
+    cap = ctx.tools.ops_limits().get("max_auto_strikes_per_carrier_per_day")
+    if cap is not None and len(ctx.tools.fault_rows(carrier_id=parcel["carrier_id"])) >= cap:
+        ctx.log("strike_cap_hit", carrier_id=parcel["carrier_id"], cap=cap)
+        return Verdict.deny(f"cổng lỗi hãng: {parcel['carrier_id']} đã đủ {cap} lỗi tự động trong ngày, chuyển người duyệt")
     fix = {"parcel_id": parcel["parcel_id"], "carrier_id": parcel["carrier_id"],
            "driver_id": parcel.get("driver_id"), "delay_days": delay}
     if any(action.get(k) != v for k, v in fix.items()):
