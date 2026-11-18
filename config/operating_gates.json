@@ -7,18 +7,24 @@
     "roi_min": null
   },
   "operations": {
-    "pic": "",
-    "approver_id": "",
+    "pic": "NV-TUNG",
+    "approver_id": "NV-HANH",
     "reviewers_on_shift": 1,
-    "review_capacity_per_hour": null,
-    "max_queue_wait_minutes": null,
-    "stop_conditions": [],
-    "alert_channel": "",
-    "decision_note": false,
-    "review_sampling_pct": 0
+    "review_capacity_per_hour": 6,
+    "max_queue_wait_minutes": 45,
+    "stop_conditions": [
+      "Khi có 1 lỗi ghi oan cho hãng (wrongful_carrier_faults > 0) thì NV-TUNG tắt file_carrier_fault và notify_carrier trong config/switches.json",
+      "Khi có 1 lần lộ dữ liệu cá nhân cho hãng (pii_leaks > 0) thì NV-TUNG tắt notify_carrier ngay",
+      "Khi tổng hoàn tự động trong ngày chạm 2.000.000đ (ngân sách Finance) hoặc có 1 khoản hoàn sai thì NV-TUNG tắt issue_refund, mọi ca chuyển NV-HANH duyệt tay",
+      "Khi có ca chờ người duyệt quá 60 phút (SLA) hoặc hàng chờ còn ca chưa nhận ở cuối ca thì NV-TUNG thu hẹp pilot_scope về kho có số tốt nhất",
+      "Khi tiền LLM một ticket vượt 1.500đ hoặc chi phí mỗi ticket vượt làm tay 10.000đ trong 1 ngày thì dừng toàn bộ trợ lý, quay về làm tay"
+    ],
+    "alert_channel": "#logix-refund-pilot-alerts",
+    "decision_note": true,
+    "review_sampling_pct": 10
   },
   "legal": {
-    "pii_fields_blocked_to_third_party": [],
-    "carrier_fault_requires_recorded_cause": false
+    "pii_fields_blocked_to_third_party": ["recipient_contact", "customer_note"],
+    "carrier_fault_requires_recorded_cause": true
   }
 }
